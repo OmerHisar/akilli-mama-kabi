@@ -84,7 +84,7 @@ export default function Home() {
     const newKey = push(ref(db, "history/today")).key;
     const updates: Record<string, any> = {};
     updates["deviceState/consumedToday"] = consumed + eaten;
-    if (newKey) updates[history/today/${newKey}] = { time: timeStr, amount: eaten };
+    if (newKey) updates[`history/today/${newKey}`] = { time: timeStr, amount: eaten };
     update(ref(db), updates);
   };
 
