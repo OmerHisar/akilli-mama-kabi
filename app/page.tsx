@@ -73,6 +73,22 @@ export default function Home() {
     pct < 30 ? "text-yellow-400" : pct < 70 ? "text-orange-500" : "text-red-600";
 
   const isAdmin = role === "admin" || role === "developer";
+  const isFilling = deviceState.status === "Dolum Yapiliyor";
+  const isNoBowl = deviceState.status === "Kap Yok";
+
+  // -- Sınıf adları (ters tırnak kullanmadan) --
+  const batteryClass = "text-lg font-bold " + getBatteryColor(deviceState.battery);
+  const statusCardClass =
+    "border rounded-xl p-3 flex flex-col items-center justify-center transition-colors duration-500 " +
+    (isFilling ? "bg-indigo-900/40 border-indigo-500" : "bg-slate-800/50 border-slate-700");
+  const statusTextClass =
+    "text-xs text-center font-bold " +
+    (isFilling ? "text-indigo-400 animate-pulse" : isNoBowl ? "text-rose-500" : "text-emerald-500");
+  const outerRingClass =
+    "transition-all duration-1000 ease-out " + getSecondaryColor(secondaryPercentage);
+  const innerRingClass =
+    "transition-all duration-1000 ease-out " +
+    (primaryPercentage >= 100 ? "text-emerald-500" : "text-emerald-400");
 
   // -- DevConsole Fonksiyonları (Hızlı Öğün Ekleme & Sıfırlama) --
   const triggerMealSimulation = () => {
@@ -84,7 +100,7 @@ export default function Home() {
     const newKey = push(ref(db, "history/today")).key;
     const updates: Record<string, any> = {};
     updates["deviceState/consumedToday"] = consumed + eaten;
-    if (newKey) updates[`history/today/${newKey}`] = { time: timeStr, amount: eaten };
+    if (newKey) updates["history/today/" + newKey] = { time: timeStr, amount: eaten };
     update(ref(db), updates);
   };
 
@@ -127,33 +143,15 @@ export default function Home() {
       <div className="w-full max-w-md grid grid-cols-3 gap-3 mb-6">
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center">
           <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Batarya</span>
-          <span className={text-lg font-bold ${getBatteryColor(deviceState.battery)}}>
-            %{deviceState.battery}
-          </span>
+          <span className={batteryClass}>%{deviceState.battery}</span>
         </div>
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center">
           <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Kasedeki</span>
           <span className="text-lg font-bold text-slate-200">{deviceState.currentWeight}g</span>
         </div>
-        <div
-          className={`border rounded-xl p-3 flex flex-col items-center justify-center transition-colors duration-500 ${
-            deviceState.status === "Dolum Yapiliyor"
-              ? "bg-indigo-900/40 border-indigo-500"
-              : "bg-slate-800/50 border-slate-700"
-          }`}
-        >
+        <div className={statusCardClass}>
           <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Durum</span>
-          <span
-            className={`text-xs text-center font-bold ${
-              deviceState.status === "Dolum Yapiliyor"
-                ? "text-indigo-400 animate-pulse"
-                : deviceState.status === "Kap Yok"
-                ? "text-rose-500"
-                : "text-emerald-500"
-            }`}
-          >
-            {deviceState.status || "Aktif"}
-          </span>
+          <span className={statusTextClass}>{deviceState.status || "Aktif"}</span>
         </div>
       </div>
 
@@ -182,9 +180,7 @@ export default function Home() {
                 strokeDasharray={outCirc}
                 strokeDashoffset={outCirc - (secondaryPercentage / 100) * outCirc}
                 strokeLinecap="round"
-                className={`transition-all duration-1000 ease-out ${getSecondaryColor(
-                  secondaryPercentage
-                )}`}
+                className={outerRingClass}
               />
             </>
           )}
@@ -208,9 +204,7 @@ export default function Home() {
             strokeDasharray={circ}
             strokeDashoffset={circ - (primaryPercentage / 100) * circ}
             strokeLinecap="round"
-            className={`transition-all duration-1000 ease-out ${
-              primaryPercentage >= 100 ? "text-emerald-500" : "text-emerald-400"
-            }`}
+            className={innerRingClass}
           />
         </svg>
         <div className="absolute flex flex-col items-center justify-center text-center">
@@ -255,7 +249,9 @@ export default function Home() {
                       return (
                         <div className="bg-slate-900 border border-slate-700 p-2 rounded shadow-xl text-xs">
                           <p className="text-slate-400 mb-1">{label}</p>
-                          <p className="text-emerald-400 font-bold">{Tüketim: ${payload[0].value}g}</p>
+                          <p className="text-emerald-400 font-bold">
+                            {"Tüketim: " + payload[0].value + "g"}
+                          </p>
                         </div>
                       );
                     }
@@ -264,7 +260,7 @@ export default function Home() {
                 />
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                   {dailyHistory.map((_, index) => (
-                    <Cell key={cell-${index}} fill="#10b981" />
+                    <Cell key={"cell-" + index} fill="#10b981" />
                   ))}
                 </Bar>
               </BarChart>
