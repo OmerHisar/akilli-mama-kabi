@@ -1,55 +1,52 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signInAnonymously, User } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { User, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
-// Sistemin kullanacağı verilerin tipleri
+// TS2339 hatasını çözen tip tanımı ('role' eklendi)
 interface AuthContextType {
   user: User | null;
-  isAdmin: boolean;
+  role: string;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  isAdmin: false,
+  role: 'anonymous',
   loading: true,
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<string>('anonymous');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Kullanıcının giriş durumunu dinle
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        // İleride belirleyeceğimiz admin e-postası (Örn: selin@mail.com)
-        // Şimdilik e-posta ile giren herkesi potansiyel admin sayabiliriz, veya anonim değilse admin diyebiliriz.
-        setIsAdmin(!currentUser.isAnonymous); 
-        setLoading(false);
-      } else {
-        // Eğer kullanıcı hiç yoksa, otomatik olarak Anonim giriş yap
+      if (!currentUser) {
         try {
-          await signInAnonymously(auth);
+          const userCred = await signInAnonymously(auth);
+          setUser(userCred.user);
+          setRole('anonymous');
         } catch (error) {
           console.error("Anonim giriş hatası:", error);
-          setLoading(false);
         }
+      } else {
+        setUser(currentUser);
+        setRole(currentUser.isAnonymous ? 'anonymous' : 'admin');
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, role, loading }}>
+      {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => useContext(AuthContext);
